@@ -1,0 +1,21 @@
+# {automatic_allocation_port}=自動的に割り当てられるポート番号
+# {userid} = 学籍番号に置換される
+# {classid} = 授業コードに置換される
+version: '3'
+services:
+  notebook:
+    image: jupyter/datascience-notebook
+    user: root
+    ports:
+      - '{automatic_allocation_port}:8888'
+    environment:
+      - GRANT_SUDO=yes
+      - TZ=Asia/Tokyo
+      - JUPYTER_ENABLE_LAB=yes
+    volumes:
+      - notebook-volume:/home/jovyan
+    command: start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''
+
+volumes:
+  notebook-volume:
+    driver: local
