@@ -29,7 +29,7 @@ class docker(command, ip, port):
             except BaseException:
                 self.service_cache = {}
         yml = self.select_service(service_name)
-        yml_data = self.load_yml(yml)
+        yml_data = self.load_file(yml)
         service_hash = hashlib.sha3_512(yml_data.encode("utf-8")).hexdigest()
         self.service_cache[f"{classid}/{userid}"] = {"port": int(port),
                                                      "hash": service_hash}
@@ -50,7 +50,7 @@ class docker(command, ip, port):
         if f"{classid}/{userid}" not in self.service_cache:
             return None
         yml = self.select_service(service_name)
-        yml_data = self.load_yml(yml)
+        yml_data = self.load_file(yml)
         service_hash = hashlib.sha3_512(yml_data.encode("utf-8")).hexdigest()
         if self.service_cache[f"{classid}/{userid}"]["hash"] == service_hash:
             return self.service_cache[f"{classid}/{userid}"]["port"]
@@ -71,6 +71,12 @@ class docker(command, ip, port):
         yml_list.extend(service_path.glob('**/docker-compose.yaml'))
         return yml_list
 
+    def get_sh_list(self) -> List[pathlib.PosixPath]:
+        service_path = pathlib.Path("./service")
+        yml_list = []
+        yml_list.extend(service_path.glob('**/docker-compose.sh'))
+        return yml_list
+
     def get_yml_list_str(self) -> str:
         yml_list = self.get_yml_list()
         result = []
@@ -85,7 +91,14 @@ class docker(command, ip, port):
                 return yml
         return False
 
-    def load_yml(self, path: str) -> str:
+    def select_service_sh(self, service_name) -> pathlib.PosixPath:
+        yml_list = self.get_sh_list()
+        for yml in yml_list:
+            if yml.parent.name == service_name:
+                return yml
+        return False
+
+    def load_file(self, path: str) -> str:
         try:
             with open(path) as f:
                 result = f.read()
@@ -93,7 +106,7 @@ class docker(command, ip, port):
         except BaseException:
             return False
 
-    def write_yml(self, path: str, data: str) -> bool:
+    def write_file(self, path: str, data: str) -> bool:
         try:
             with open(path, "w") as f:
                 f.write(data)
@@ -101,24 +114,25 @@ class docker(command, ip, port):
         except BaseException:
             return False
 
-    def make_yml(
+    def make_file(
             self,
-            yml_path: pathlib.PosixPath,
+            file_path: pathlib.PosixPath,
             port,
             userid,
             class_id) -> pathlib.PosixPath:
-        yml = self.load_yml(yml_path)
-        yml = yml.replace("{automatic_allocation_port}", str(port))
-        yml = yml.replace("{userid}", userid)
-        yml = yml.replace("{classid}", class_id)
-        filename = f"{self.GetRandomStr(10)}.yml"
-        new_yml_path = yml_path.parent / filename
-        self.write_yml(new_yml_path, yml)
-        return new_yml_path
+        file_data = self.load_file(file_path)
+        file_data = file_data.replace("{automatic_allocation_port}", str(port))
+        file_data = file_data.replace("{userid}", userid)
+        file_data = file_data.replace("{classid}", class_id)
+        filename = f"{self.GetRandomStr(20)}{file_path.suffix}"
+        new_file_path = file_path.parent / filename
+        self.write_file(new_file_path, file_data)
+        return new_file_path
 
     async def deploy_service(self, yml_path: pathlib.PosixPath, service_name):
         cmd = f"docker stack deploy -c {yml_path.name} {service_name}"
-        result = await self.run(cmd, yml_path.parent)
+        pwd = yml_path.parent
+        result = await self.run(cmd, pwd)
         return result
 
     @dataclass
@@ -150,7 +164,19 @@ class docker(command, ip, port):
                 port=cache_port,)
         # 新規or サービスファイルに変更があったとき
         _port = await self.scan_available_port(50000)
-        new_yml = self.make_yml(service_path, _port, userid, classid)
+        # 事前スクリプトの存在確認
+        service_sh_path = self.select_service_sh(service_name)
+        if not service_sh_path:
+            pass
+        else:
+            # 事前スクリプトの実行
+            new_sh = self.make_file(service_sh_path, _port, userid, classid)
+            cmd = f"/bin/bash {new_sh.name}"
+            pwd = new_sh.parent
+            result = await self.run(cmd, pwd)
+            new_sh.unlink()
+
+        new_yml = self.make_file(service_path, _port, userid, classid)
         result = await self.deploy_service(new_yml, f"{classid}-{userid}")
         new_yml.unlink()
         self.port_candidate.remove(_port)
@@ -171,4 +197,4 @@ if __name__ == "__main__":
     hoge = docker()
     test = hoge.get_yml_list()
     print(test)
-    print(hoge.make_yml(test[0], 1000, "dasd", "fgadsfa"))
+    print(hoge.make_file(test[0], 1000, "dasd", "fgadsfa"))
