@@ -144,12 +144,19 @@ class docker(command, ip, port):
         message: str = ""
         stdout: str = ""
         stderr: str = ""
+    @dataclass
+    class docker_result_class2:
+        result: bool
+        service_list: list = ""
+        message: str = ""
+        stdout: str = ""
+        stderr: str = ""
 
     async def deploy(self, userid, classid, service_name, client_ip):
         # サービスの存在を確認
         service_path = self.select_service(service_name)
         if not service_path:
-            return self.docker_result_class(
+            return self.docker_result_class2(
                 result=False,
                 message="指定されたサービスが見つかりません。",
                 service_list=self.get_yml_list_str())
@@ -181,7 +188,7 @@ class docker(command, ip, port):
         new_yml.unlink()
         self.port_candidate.remove(_port)
         if result.returncode != 0:
-            return self.docker_result_class(
+            return self.docker_result_class2(
                 result=False,
                 message="docker 実行中にエラーが生じました",
                 stdout=result.stdout,

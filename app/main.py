@@ -11,8 +11,8 @@ async def root():
 
 
 @app.get("/docker")
-async def root(request: Request, classid: str, userid: str, service_name: str):
-    result = await docker.deploy(userid, classid, service_name, request.client.host)
+async def root(request: Request, ealps_cid: str, ealps_sid: str, service_name: str):
+    result = await docker.deploy(ealps_sid, ealps_cid, service_name, request.client.host)
     if result.result:
         return result
     else:
