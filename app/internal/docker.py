@@ -23,6 +23,7 @@ class docker(command, ip, port, request_class):
         """
         classid,useridをキーとしてdocker-compose.ymlのハッシュ値とportを保存
         """
+        docker_service_provided_name = f"{classid}-{userid}-{service_name}"
         if self.service_cache is None:
             try:
                 with open("service_cache.json") as f:
@@ -32,8 +33,8 @@ class docker(command, ip, port, request_class):
         yml = self.select_service(service_name)
         yml_data = self.load_file(yml)
         service_hash = hashlib.sha3_512(yml_data.encode("utf-8")).hexdigest()
-        self.service_cache[f"{classid}-{userid}"] = {"port": int(port),
-                                                     "hash": service_hash}
+        self.service_cache[docker_service_provided_name] = {
+            "port": int(port), "hash": service_hash}
         with open("service_cache.json", "w") as f:
             json.dump(self.service_cache, f, indent=4, sort_keys=True)
 
@@ -42,8 +43,9 @@ class docker(command, ip, port, request_class):
         """
         classid,useridをキーとしてdocker-compose.ymlのハッシュ値に変更がなければ、前回の割当portを返す
         """
+        docker_service_provided_name = f"{classid}-{userid}-{service_name}"
         services = await self.get_services()
-        if f"{classid}-{userid}" not in services:
+        if docker_service_provided_name not in services:
             return None
 
         if self.service_cache is None:
@@ -52,13 +54,13 @@ class docker(command, ip, port, request_class):
                     self.service_cache = json.load(f)
             except BaseException:
                 self.service_cache = {}
-        if f"{classid}-{userid}" not in self.service_cache:
+        if docker_service_provided_name not in self.service_cache:
             return None
         yml = self.select_service(service_name)
         yml_data = self.load_file(yml)
         service_hash = hashlib.sha3_512(yml_data.encode("utf-8")).hexdigest()
-        if self.service_cache[f"{classid}-{userid}"]["hash"] == service_hash:
-            return self.service_cache[f"{classid}-{userid}"]["port"]
+        if self.service_cache[docker_service_provided_name]["hash"] == service_hash:
+            return self.service_cache[docker_service_provided_name]["port"]
         else:
             return None
 
@@ -198,7 +200,8 @@ class docker(command, ip, port, request_class):
             new_sh.unlink()
 
         new_yml = self.make_file(service_path, _port, userid, classid)
-        result = await self.deploy_service(new_yml, f"{classid}-{userid}")
+        docker_service_provided_name = f"{classid}-{userid}-{service_name}"
+        result = await self.deploy_service(new_yml, docker_service_provided_name)
         new_yml.unlink()
         self.port_candidate.remove(_port)
         if result.returncode != 0:
