@@ -16,6 +16,4 @@ async def root(request: Request, ealps_cid: str, ealps_sid: str, service_name: s
     if result.result:
         return result
     else:
-        del result.port
-        del result.ip
         return result

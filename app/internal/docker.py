@@ -32,29 +32,33 @@ class docker(command, ip, port, request_class):
         yml = self.select_service(service_name)
         yml_data = self.load_file(yml)
         service_hash = hashlib.sha3_512(yml_data.encode("utf-8")).hexdigest()
-        self.service_cache[f"{classid}/{userid}"] = {"port": int(port),
+        self.service_cache[f"{classid}-{userid}"] = {"port": int(port),
                                                      "hash": service_hash}
         with open("service_cache.json", "w") as f:
             json.dump(self.service_cache, f, indent=4, sort_keys=True)
 
-    def get_port_from_service_cache(
+    async def get_port_from_service_cache(
             self, classid, userid, service_name) -> int:
         """
         classid,useridをキーとしてdocker-compose.ymlのハッシュ値に変更がなければ、前回の割当portを返す
         """
+        services = await self.get_services()
+        if f"{classid}-{userid}" not in services:
+            return None
+
         if self.service_cache is None:
             try:
                 with open("service_cache.json") as f:
                     self.service_cache = json.load(f)
             except BaseException:
                 self.service_cache = {}
-        if f"{classid}/{userid}" not in self.service_cache:
+        if f"{classid}-{userid}" not in self.service_cache:
             return None
         yml = self.select_service(service_name)
         yml_data = self.load_file(yml)
         service_hash = hashlib.sha3_512(yml_data.encode("utf-8")).hexdigest()
-        if self.service_cache[f"{classid}/{userid}"]["hash"] == service_hash:
-            return self.service_cache[f"{classid}/{userid}"]["port"]
+        if self.service_cache[f"{classid}-{userid}"]["hash"] == service_hash:
+            return self.service_cache[f"{classid}-{userid}"]["port"]
         else:
             return None
 
@@ -136,6 +140,12 @@ class docker(command, ip, port, request_class):
         result = await self.run(cmd, pwd)
         return result
 
+    async def get_services(self):
+        cmd = "docker stack ls --format '{{.Name}}'"
+        pwd = "./"
+        result = await self.run(cmd, pwd)
+        return result.stdout.split("\n")
+
     @dataclass
     class docker_result_class:
         result: bool
@@ -155,6 +165,7 @@ class docker(command, ip, port, request_class):
         stderr: str = ""
 
     async def deploy(self, userid, classid, service_name, client_ip):
+
         # サービスの存在を確認
         service_path = self.select_service(service_name)
         if not service_path:
@@ -163,8 +174,9 @@ class docker(command, ip, port, request_class):
                 message="指定されたサービスが見つかりません。",
                 service_list=self.get_yml_list_str())
         # 前回の立ち上げからサービスファイルが変更なければそのまま
-        cache_port = self.get_port_from_service_cache(
+        cache_port = await self.get_port_from_service_cache(
             classid, userid, service_name)
+
         if cache_port is not None:
             return self.docker_result_class(
                 result=True,
