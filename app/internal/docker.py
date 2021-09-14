@@ -4,13 +4,14 @@ import random
 from .module.command import command
 from .module.port import port
 from .module.ip import ip
+from .module.request import request_class
 import pathlib
 from dataclasses import dataclass
 import hashlib
 import json
 
 
-class docker(command, ip, port):
+class docker(command, ip, port, request_class):
     def __init__(self):
         command.__init__(self)
         ip.__init__(self)
@@ -144,6 +145,7 @@ class docker(command, ip, port):
         message: str = ""
         stdout: str = ""
         stderr: str = ""
+
     @dataclass
     class docker_result_class2:
         result: bool
@@ -193,11 +195,17 @@ class docker(command, ip, port):
                 message="docker 実行中にエラーが生じました",
                 stdout=result.stdout,
                 stderr=result.stderr)
-        self.add_service_cache(classid, userid, service_name, _port)
-        return self.docker_result_class(
-            result=True,
-            ip=self.get_ip_address(client_ip)[0],
-            port=_port,)
+        # 起動確認
+        if await self.start_check(f"http://127.0.0.1:{_port}"):
+            self.add_service_cache(classid, userid, service_name, _port)
+            return self.docker_result_class(
+                result=True,
+                ip=self.get_ip_address(client_ip)[0],
+                port=_port,)
+        else:
+            return self.docker_result_class2(
+                result=False,
+                message="起動確認のタイムアウトが発生しました。",)
 
 
 if __name__ == "__main__":

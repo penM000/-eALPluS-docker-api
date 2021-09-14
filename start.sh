@@ -1,7 +1,8 @@
 #!/bin/bash
 # スクリプトの場所に移動
 cd `dirname $0`
-pip3 install -U fastapi uvicorn[standard] psutil 
+pip3 install -U fastapi uvicorn[standard] psutil aiohttp
+
 
 
 if [ "root" = `whoami` ]; then
