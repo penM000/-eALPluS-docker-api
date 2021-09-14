@@ -1,3 +1,4 @@
+# {servicename} 親フォルダ名 この場合はjupyterlab
 # {automatic_allocation_port}=自動的に割り当てられるポート番号
 # {userid} = 学籍番号に置換される
 # {classid} = 授業コードに置換される

@@ -131,6 +131,7 @@ class docker(command, ip, port, request_class):
         file_data = file_data.replace("{automatic_allocation_port}", str(port))
         file_data = file_data.replace("{userid}", userid)
         file_data = file_data.replace("{classid}", class_id)
+        file_data = file_data.replace("{servicename}", file_path.parent.name)
         filename = f"{self.GetRandomStr(20)}{file_path.suffix}"
         new_file_path = file_path.parent / filename
         self.write_file(new_file_path, file_data)
