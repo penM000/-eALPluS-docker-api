@@ -165,9 +165,13 @@ class docker(command, ip, port, request_class):
         port = None
         try:
             for line in result.stdout.split("\n"):
-                port_data = line.split(",")[1]
-                if len(port_data) != 0:
-                    port = port_data[2:].split("->")[0]
+                print(line)
+                try:
+                    port_data = line.split(",")[1]
+                    if len(port_data) != 0:
+                        port = port_data[2:].split("->")[0]
+                except BaseException:
+                    pass
         except BaseException:
             port = 0
         return int(port)
