@@ -60,6 +60,7 @@ class docker(command, ip, port, request_class):
         yml_data = self.load_file(yml)
         service_hash = hashlib.sha3_512(yml_data.encode("utf-8")).hexdigest()
         if self.service_cache[docker_service_provided_name]["hash"] == service_hash:
+            """
             print(
                 "問い合わせ結果=",
                 await self.get_service_port(
@@ -69,7 +70,12 @@ class docker(command, ip, port, request_class):
             print(
                 "キャッシュ情報=",
                 self.service_cache[docker_service_provided_name]["port"])
-            return self.service_cache[docker_service_provided_name]["port"]
+            """
+            port = await self.get_service_port(
+                classid,
+                userid,
+                service_name)
+            return port
         else:
             return None
 
@@ -165,7 +171,6 @@ class docker(command, ip, port, request_class):
         port = None
         try:
             for line in result.stdout.split("\n"):
-                print(line)
                 try:
                     port_data = line.split(",")[1]
                     if len(port_data) != 0:
