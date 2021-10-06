@@ -15,9 +15,9 @@ services:
       - JUPYTER_ENABLE_LAB=yes
     volumes:
       - notebook-volume:/home/jovyan
-      - $PWD/upload:/home/jovyan/upload:ro
+      - $PWD/materials:/home/jovyan/materials:ro
       #- $PWD/save/{classid}/{userid}:/home/jovyan/{userid}
-    command: start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''
+    command: /bin/bash -c "rm -r /home/jovyan/work ; mkdir -p /home/jovyan/submit ; start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''"
 
 volumes:
   notebook-volume:
