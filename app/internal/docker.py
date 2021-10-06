@@ -62,7 +62,7 @@ class docker(command, ip, port, request_class):
         if self.service_cache[docker_service_provided_name]["hash"] == service_hash:
             print(
                 "問い合わせ結果=",
-                self.get_service_port(
+                await self.get_service_port(
                     classid,
                     userid,
                     service_name))
@@ -167,7 +167,6 @@ class docker(command, ip, port, request_class):
             port_data = line.split(",")[1]
             if len(port_data) != 0:
                 port = port_data[2:].split("->")[0]
-        print(port)
         return int(port)
 
     @dataclass
