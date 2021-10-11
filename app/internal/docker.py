@@ -10,6 +10,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 from functools import lru_cache
+from cachetools import cached, LRUCache, TTLCache
 
 
 class docker(command, ip, port, request_class):
@@ -72,12 +73,13 @@ class docker(command, ip, port, request_class):
                 "キャッシュ情報=",
                 self.service_cache[docker_service_provided_name]["port"])
             """
-            #port = self.service_cache[docker_service_provided_name]["port"]
-
+            port = self.service_cache[docker_service_provided_name]["port"]
+            """
             port = await self.get_service_port(
                 classid,
                 userid,
                 service_name)
+            """
 
             return port
         else:
@@ -90,22 +92,21 @@ class docker(command, ip, port, request_class):
         # 英数字からランダムに取得
         return ''.join([random.choice(dat) for i in range(num)])
 
-    @lru_cache(maxsize=128)
+    @cached(cache=TTLCache(maxsize=1024, ttl=10))
     def get_yml_list(self) -> List[pathlib.PosixPath]:
         service_path = pathlib.Path("./service")
         yml_list = []
-        yml_list.extend(service_path.glob('**/docker-compose.yml'))
-        yml_list.extend(service_path.glob('**/docker-compose.yaml'))
+        yml_list.extend(service_path.glob('*/docker-compose.yml'))
+        yml_list.extend(service_path.glob('*/docker-compose.yaml'))
         return yml_list
 
-    @lru_cache(maxsize=128)
+    @cached(cache=TTLCache(maxsize=1024, ttl=10))
     def get_sh_list(self) -> List[pathlib.PosixPath]:
         service_path = pathlib.Path("./service")
         yml_list = []
-        yml_list.extend(service_path.glob('**/docker-compose.sh'))
+        yml_list.extend(service_path.glob('*/docker-compose.sh'))
         return yml_list
 
-    @lru_cache(maxsize=128)
     def get_yml_list_str(self) -> str:
         yml_list = self.get_yml_list()
         result = []
@@ -113,7 +114,6 @@ class docker(command, ip, port, request_class):
             result.append(str(yml.parent.name))
         return result
 
-    @lru_cache(maxsize=128)
     def select_service(self, service_name) -> pathlib.PosixPath:
         yml_list = self.get_yml_list()
         for yml in yml_list:
@@ -121,7 +121,6 @@ class docker(command, ip, port, request_class):
                 return yml
         return False
 
-    @lru_cache(maxsize=128)
     def select_service_sh(self, service_name) -> pathlib.PosixPath:
         yml_list = self.get_sh_list()
         for yml in yml_list:
