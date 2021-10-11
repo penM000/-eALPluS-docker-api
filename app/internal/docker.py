@@ -9,6 +9,7 @@ import pathlib
 from dataclasses import dataclass
 import hashlib
 import json
+from functools import lru_cache
 
 
 class docker(command, ip, port, request_class):
@@ -72,12 +73,12 @@ class docker(command, ip, port, request_class):
                 self.service_cache[docker_service_provided_name]["port"])
             """
             #port = self.service_cache[docker_service_provided_name]["port"]
-            
+
             port = await self.get_service_port(
                 classid,
                 userid,
                 service_name)
-            
+
             return port
         else:
             return None
@@ -116,6 +117,7 @@ class docker(command, ip, port, request_class):
                 return yml
         return False
 
+    @lru_cache(maxsize=128)
     def select_service_sh(self, service_name) -> pathlib.PosixPath:
         yml_list = self.get_sh_list()
         for yml in yml_list:
