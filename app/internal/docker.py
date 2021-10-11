@@ -10,7 +10,6 @@ from dataclasses import dataclass
 import hashlib
 import json
 from functools import lru_cache
-from cachetools import cached, LRUCache, TTLCache
 
 
 class docker(command, ip, port, request_class):
@@ -92,7 +91,6 @@ class docker(command, ip, port, request_class):
         # 英数字からランダムに取得
         return ''.join([random.choice(dat) for i in range(num)])
 
-    @cached(cache=TTLCache(maxsize=1024, ttl=10))
     def get_yml_list(self) -> List[pathlib.PosixPath]:
         service_path = pathlib.Path("./service")
         yml_list = []
@@ -100,7 +98,6 @@ class docker(command, ip, port, request_class):
         yml_list.extend(service_path.glob('*/docker-compose.yaml'))
         return yml_list
 
-    @cached(cache=TTLCache(maxsize=1024, ttl=10))
     def get_sh_list(self) -> List[pathlib.PosixPath]:
         service_path = pathlib.Path("./service")
         yml_list = []
