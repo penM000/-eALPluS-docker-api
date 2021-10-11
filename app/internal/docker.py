@@ -72,13 +72,12 @@ class docker(command, ip, port, request_class):
                 "キャッシュ情報=",
                 self.service_cache[docker_service_provided_name]["port"])
             """
-            port = self.service_cache[docker_service_provided_name]["port"]
-            """
+            # port = self.service_cache[docker_service_provided_name]["port"]
+
             port = await self.get_service_port(
                 classid,
                 userid,
                 service_name)
-            """
 
             return port
         else:
