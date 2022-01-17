@@ -226,6 +226,7 @@ class docker(command, ip, port, request_class):
         for container_id in container_id_list:
             tasks.append(self.stop_container(container_id))
         await asyncio.gather(*tasks)
+        return "停止処理を行いました。再起動には30秒ほどかかるので安静にしてお待ち下さい"
 
     async def deploy(self, userid, classid, service_name, client_ip):
 
