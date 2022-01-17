@@ -8,5 +8,5 @@ services:
     image: code-server-c-program
     ports:
       - '{automatic_allocation_port}:8080'
-    command: /bin/bash -c "mkdir -p /home/coder/submit ; mkdir -p /home/coder/material ; code-server --auth none /home/coder/project"
+    command: code-server --auth none /home/coder
 
