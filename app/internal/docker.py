@@ -10,6 +10,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 from functools import lru_cache
+import asyncio
 
 
 class docker(command, ip, port, request_class):
@@ -185,6 +186,21 @@ class docker(command, ip, port, request_class):
             port = 0
         return int(port)
 
+    async def get_container_id(self, classid, userid, service_name) -> List[str]:
+        cmd = f'docker ps | grep {classid} |grep {userid} | grep {service_name} | cut -d " " -f 1'
+        pwd = "./"
+        result = await self.run(cmd, pwd)
+        result = result.stdout.split("\n")
+        if result[-1] == "":
+            result = result[:-1]
+        return result
+
+    async def stop_container(self, container_id):
+        cmd = f"docker stop {container_id}"
+        pwd = "./"
+        result = await self.run(cmd, pwd)
+        return result
+
     @dataclass
     class docker_result_class:
         result: bool
@@ -202,6 +218,14 @@ class docker(command, ip, port, request_class):
         message: str = ""
         stdout: str = ""
         stderr: str = ""
+
+    async def stop(self, userid, classid, service_name):
+        container_id_list = await self.get_container_id(
+            classid, userid, service_name)
+        tasks = []
+        for container_id in container_id_list:
+            tasks.append(self.stop_container(container_id))
+        await asyncio.gather(*tasks)
 
     async def deploy(self, userid, classid, service_name, client_ip):
 
