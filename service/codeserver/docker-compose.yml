@@ -1,0 +1,12 @@
+# {servicename} 親フォルダ名 この場合はjupyterlab
+# {automatic_allocation_port}=自動的に割り当てられるポート番号
+# {userid} = 学籍番号に置換される
+# {classid} = 授業コードに置換される
+version: '3'
+services:
+  notebook:
+    image: code-server-c-program
+    ports:
+      - '{automatic_allocation_port}:8080'
+    command: /bin/bash -c "mkdir -p /home/coder/submit ; mkdir -p /home/coder/material ; code-server --auth none /home/coder/project"
+
